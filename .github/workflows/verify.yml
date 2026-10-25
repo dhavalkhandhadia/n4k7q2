@@ -1,0 +1,32 @@
+name: Verify application
+on: [push, workflow_dispatch]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: pip install -r requirements-dev.txt
+      - run: python -m unittest discover -s tests -v
+      - run: npm ci
+      - run: npm run build
+      - run: docker build -t northline:test .
+      - name: Check running Docker application
+        shell: bash
+        run: |
+          docker run -d --name northline -p 8000:8000 northline:test
+          trap 'docker logs northline; docker rm -f northline' EXIT
+          for attempt in {1..30}; do
+            if curl -fsS http://localhost:8000/api/health > /tmp/health.json; then break; fi
+            sleep 1
+          done
+          python -c 'import json; assert json.load(open("/tmp/health.json"))["status"] == "ok"'
+          curl -fsS http://localhost:8000/ | grep -q 'Northline'
+          curl -fsS 'http://localhost:8000/api/month?cutoff=09:00' > /tmp/month.json
+          python -c 'import json; assert json.load(open("/tmp/month.json"))["metrics"]["pairedHours"] == 744'
