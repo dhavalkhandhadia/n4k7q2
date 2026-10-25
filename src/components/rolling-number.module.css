@@ -1,0 +1,100 @@
+/* Piruicy · Rolling number · https://piruicy.com/components/rolling-number
+   Copyright (c) 2026 Dhaval Khandhadia. MIT + Commons Clause: use it in your products; do not sell it. See LICENSE. */
+/* The window is one slot tall. Digits fade out through its top and bottom
+   (--mask-height) and, while columns enter or leave, through its sides
+   (--mask-width). A slot is 1em of line plus --mask-height of padding. */
+.root {
+  --mask-width: 0.5em;
+  --mask-height: 0.15em;
+  position: relative;
+  display: inline-flex;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  isolation: isolate;
+}
+
+.visual {
+  display: inline-flex;
+  align-items: center;
+}
+
+.window {
+  display: inline-flex;
+  margin: 0 calc(-1 * var(--mask-width));
+  padding: calc(var(--mask-height) / 2) var(--mask-width);
+  overflow: clip;
+  mask-image:
+    linear-gradient(
+      to right,
+      transparent,
+      #000 var(--mask-width),
+      #000 calc(100% - var(--mask-width)),
+      transparent
+    ),
+    linear-gradient(
+      to bottom,
+      transparent,
+      #000 var(--mask-height),
+      #000 calc(100% - var(--mask-height)),
+      transparent
+    );
+  mask-composite: intersect;
+  -webkit-mask-composite: source-in;
+}
+
+.edge {
+  display: inline-flex;
+  padding: calc(var(--mask-height) / 2) 0;
+}
+
+.cell {
+  display: inline-flex;
+  justify-content: center;
+  /* A column narrowing in or out is cut to its width, so leaving digits never pile onto the ones that stay. */
+  overflow-x: clip;
+}
+
+.symbol {
+  display: inline-block;
+  padding: calc(var(--mask-height) / 2) 0;
+}
+
+.column {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.strip {
+  position: absolute;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.strip[data-side="above"] {
+  bottom: 100%;
+}
+.strip[data-side="below"] {
+  top: 100%;
+}
+
+.slot {
+  display: inline-block;
+  padding: calc(var(--mask-height) / 2) 0;
+}
+
+/* The number, for screen readers and for copying. */
+.text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

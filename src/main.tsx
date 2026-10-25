@@ -4,6 +4,7 @@ import { MotionConfig } from "motion/react";
 import Landing from "./Landing";
 import "./style.css";
 import "./landing.css";
+import "./internal.css";
 
 const App = React.lazy(() => import("./App"));
 const query = new URLSearchParams(window.location.search);

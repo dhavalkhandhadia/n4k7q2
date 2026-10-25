@@ -36,7 +36,7 @@ Vite development proxies same-origin `/api` requests to Python. The Docker image
 
 ## UI choices
 
-The plain root route renders the approved A2 landing. `/desk` loads the analyst workspace separately; original root query links still resolve to the workspace. Docker and Vercel both serve the entry document for `/desk`, including direct refreshes. Inter, Newsreader, and the illustrative ImageGen panorama are local assets. Motion supplies subtle interaction feedback with system reduced-motion support; the brief and methodology remain readable without animation.
+The plain root route renders the approved A2 landing. `/desk` loads the analyst workspace separately; original root query links still resolve to the workspace. Docker and Vercel both serve the entry document for `/desk`, including direct refreshes. Inter, Newsreader, and the illustrative ImageGen panorama are local assets. GSAP supplies scene choreography and explanatory line drawing; Motion supplies digit columns and control springs with system reduced-motion support; the brief and methodology remain readable without animation.
 
 The desk distinguishes information available at the decision from later actuals. Hindsight is opt-in and labelled. Supporting sources, exact tabular values, lead times, cutoffs and scope are visible. SVG charts have textual summaries and equivalent tables. Controls have explicit labels, keyboard focus indicators, and native form validation. Layout stacks on mobile; tables scroll within their own region. Reduced motion is respected. Failed requests show an actionable retry and do not preserve stale results under new date labels.
 
@@ -45,3 +45,9 @@ The desk distinguishes information available at the decision from later actuals.
 The range is a pooled, descriptive sample across delivery hours and forecast horizons. It is not a calibrated, conditional uncertainty model. Only January decision history is used, so no mature estimate exists at the start of the window. An operational version would require agreed source coverage, archived revisions, more training months, proper out-of-sample calibration, and utility demand/contracts. The current pilot makes none of those assumptions silently.
 
 Read `tests/test_analysis.py` for temporal invariants, hand-computed metric cases, missing data, validation, and a direct raw-input cross-check. CI verifies an independently built Docker runtime as well as the Python and TypeScript builds.
+
+## Interaction continuity
+
+`useData` keeps the last successful payload while a new request runs. `DataView` preserves the chart and number component instances, but makes their old surface invisible, inert, and hidden from assistive technology until the matching response arrives. Errors keep that mask and expose Retry. Aborted responses and errors cannot overwrite the active request. URL matching remains a separate guard.
+
+The native monthly range input maps 1–31 to the same daily records used in CSV and the detailed table. Home/End and arrow keys work without a custom gesture system. Replay updates the existing decision selector. The original rolling-number spring (86/18.6, critical) is retained from Piruicy; only an instant-input flag was added. See [interaction design](interaction-design.md) for references and observed checks.

@@ -91,12 +91,16 @@ Across all 744 paired hours, MAE is **2.039 GW**, RMSE **2.505 GW**, bias **+1.7
 ## Architecture and files
 
 ```text
-src/Landing.tsx              Approved A2 landing and Motion interactions
+src/Landing.tsx              Approved A2 landing and GSAP and Motion interactions
 src/landing.css              Shared paper, ink and editorial typography theme
 src/assets/                  Self-hosted fonts and optimized panorama
 src/App.tsx                  React views, controls, charts, accessible tables
 src/types.ts                 API response types
-src/style.css                Responsive Northline visual design
+src/interaction.tsx          Input-aware controls, numeric formatting, GSAP scenes
+src/components/              Piruicy rolling-number mechanics and styles
+src/Method.tsx               Accessible source-selection/alignment/error diagrams
+src/internal.css             Minimal analyst-page layouts
+src/style.css                Shared responsive structure
 src/main.tsx                 Landing/desk entry selection and lazy desk loading
 backend/analysis.py          Indexed data, as-of selection, metrics, risk, cohort
 backend/app.py               FastAPI endpoints, validation, CSV, Docker static serving
@@ -130,7 +134,7 @@ Public repository: **https://github.com/dhavalkhandhadia/n4k7q2** (anonymous nam
 
 ## AI assistance
 
-**OpenAI Codex was used** to read the supplied brief, research the official API documentation, implement the frontend/backend, author tests and documentation, and help verify and deploy the application. The landing panorama was generated with OpenAI ImageGen and is illustrative, rather than a photograph of a specific installation. The approved A2 design uses Motion for the restrained first-visit entrance, link feedback, active-view indicator, loading state, and hindsight reveal; reduced-motion preferences are respected. All displayed generation values come from Elexon; no synthetic values or AI-generated forecasts are used. The person presenting the project should review and understand the implementation and assumptions.
+**OpenAI Codex was used** to read the supplied brief, research the official API documentation, implement the frontend/backend, author tests and documentation, and help verify and deploy the application. The landing panorama was generated with OpenAI ImageGen and is illustrative, rather than a photograph of a specific installation. The approved A2 theme now uses GSAP for the first-visit headline/panorama sequence, native-scroll image movement, scene choreography, and explanatory path drawing. Motion handles numeric columns, switch springs, the active-view indicator, and state feedback. Keyboard-triggered movement is skipped; reduced-motion preferences are respected. Accuracy can be scrubbed by day using a native range control, with exact values and replay beside it. Detailed tables and methodology are disclosed on demand. The rolling-number implementation is adapted from [Piruicy](https://piruicy.com/components/rolling-number), preserving its spring and interruption mechanics; its MIT + Commons Clause notice is in `public/licenses/piruicy-LICENSE.txt`. All displayed generation values come from Elexon; no synthetic values or AI-generated forecasts are used. The person presenting the project should review and understand the implementation and assumptions.
 
 ## Remaining submission work
 

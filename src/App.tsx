@@ -1,33 +1,38 @@
-import { useEffect, useState } from "react";
+import {
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { motion, useReducedMotion } from "motion/react";
 import {
-  ArrowDownRight,
   ArrowRight,
   ArrowUpRight,
   CalendarDays,
-  Check,
   ChevronLeft,
   ChevronRight,
   Download,
   ExternalLink,
   Info,
-  Layers3,
   RefreshCw,
   Wind,
 } from "lucide-react";
 import {
   Area,
-  Bar,
   CartesianGrid,
   ComposedChart,
   Line,
-  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import type { Day, Month } from "./types";
+import { KeyboardInput, RollingValue, Toggle, useScene } from "./interaction";
+import Method from "./Method";
+import gsap from "gsap";
 
 type View = "desk" | "accuracy" | "method";
 const number = (n: number | null | undefined, digits = 0) =>
@@ -54,6 +59,7 @@ const utcTime = (d: string) =>
   });
 
 function useData<T>(url: string) {
+  const previous = useRef<T | null>(null);
   const [result, setResult] = useState<{
     url: string;
     data: T | null;
@@ -75,15 +81,20 @@ function useData<T>(url: string) {
         }
         return response.json() as Promise<T>;
       })
-      .then((data) => setResult({ url, data, error: null }))
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        previous.current = data;
+        setResult({ url, data, error: null });
+      })
       .catch((error) => {
-        if (error.name !== "AbortError")
+        if (!controller.signal.aborted && error.name !== "AbortError")
           setResult({ url, data: null, error: error.message });
       });
     return () => controller.abort();
   }, [url, retry]);
   return {
     data: result.url === url ? result.data : null,
+    previous: previous.current,
     error: result.url === url ? result.error : null,
     retry: () => setRetry((n) => n + 1),
   };
@@ -103,10 +114,10 @@ function Metric({
   accent?: boolean;
 }) {
   return (
-    <div className={`metric ${accent ? "metric-accent" : ""}`}>
+    <div className={`metric ${accent ? "metric-accent" : ""}`} data-enter>
       <p>{label}</p>
       <div className="metric-value">
-        {value}
+        <RollingValue value={value} />
         <span>{unit}</span>
       </div>
       <small>{detail}</small>
@@ -143,7 +154,42 @@ function Empty({ error, retry }: { error: string | null; retry: () => void }) {
   );
 }
 
+function DataView<T>({
+  result,
+  children,
+}: {
+  result: {
+    data: T | null;
+    previous: T | null;
+    error: string | null;
+    retry: () => void;
+  };
+  children: (data: T) => ReactNode;
+}) {
+  const shown = result.data ?? result.previous;
+  return (
+    <div className="data-scene" aria-busy={!result.data && !result.error}>
+      {shown && (
+        <div
+          className="data-surface"
+          style={{ visibility: result.data ? "visible" : "hidden" }}
+          aria-hidden={!result.data}
+          inert={!result.data}
+        >
+          {children(shown)}
+        </div>
+      )}
+      {!result.data && (
+        <div className={shown ? "data-overlay" : undefined}>
+          <Empty error={result.error} retry={result.retry} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
+  const reduceMotion = useReducedMotion();
   const initial = new URLSearchParams(window.location.search);
   const initialDate = initial.get("date") || "";
   const initialTime = initial.get("cutoff") || "";
@@ -167,6 +213,7 @@ export default function App() {
   const [actuals, setActuals] = useState(false);
   const [range, setRange] = useState(true);
   const [keyboardView, setKeyboardView] = useState(false);
+  const [keyboardInput, setKeyboardInput] = useState(false);
   const day = useData<Day>(`/api/day?decision_date=${date}&cutoff=${cutoff}`);
   const month = useData<Month>(`/api/month?cutoff=${cutoff}`);
   useEffect(() => {
@@ -206,156 +253,196 @@ export default function App() {
           </a>
         </div>
       </header>
-      <main id="desk-content" className="desk-main">
-        <section className="intro">
-          <div>
-            <div className="eyebrow">
-              <span className="small-line" />
-              GB WIND / JANUARY 2026
+      <KeyboardInput.Provider value={keyboardInput}>
+        <main
+          id="desk-content"
+          className="desk-main"
+          onKeyDownCapture={(event) => {
+            event.currentTarget.dataset.input = "keyboard";
+            setKeyboardInput(true);
+          }}
+          onPointerDownCapture={(event) => {
+            event.currentTarget.dataset.input = "pointer";
+            setKeyboardInput(false);
+          }}
+        >
+          <section className="intro">
+            <div>
+              <div className="eyebrow">
+                <span className="small-line" />
+                GB WIND / ARCHIVE
+              </div>
+              <motion.h1
+                key={view}
+                initial={
+                  keyboardView || reduceMotion
+                    ? false
+                    : { transform: "translateY(8px)", opacity: 0.5 }
+                }
+                animate={{ transform: "translateY(0px)", opacity: 1 }}
+                transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+              >
+                {view === "accuracy"
+                  ? "Forecast accuracy"
+                  : view === "method"
+                    ? "Methodology"
+                    : "Day-ahead desk"}
+              </motion.h1>
             </div>
-            <h1>
-              {view === "accuracy"
-                ? "Forecast accuracy"
-                : view === "method"
-                  ? "Data & methodology"
-                  : "Day-ahead desk"}
-            </h1>
-          </div>
-          <div className="period-stamp">
-            <span>DECISION WINDOW</span>
-            <strong>January 2026</strong>
-            <span>31 days · hourly resolution · GMT</span>
-          </div>
-        </section>
-        <nav className="view-tabs" aria-label="Dashboard views">
-          {(
-            [
-              ["desk", "Day-ahead"],
-              ["accuracy", "Accuracy"],
-              ["method", "Methodology"],
-            ] as [View, string][]
-          ).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={(event) => {
-                setKeyboardView(event.detail === 0);
-                setView(key);
-              }}
-              className={view === key ? "active" : ""}
-              aria-current={view === key ? "page" : undefined}
-            >
-              {label}
-              {view === key && (
-                <motion.span
-                  className="tab-indicator"
-                  layoutId="desk-tab"
-                  transition={{
-                    duration: keyboardView ? 0 : 0.18,
-                    ease: [0.23, 1, 0.32, 1],
-                  }}
+            <div className="period-stamp">
+              <strong>January 2026</strong>
+              <span>31 decisions · GMT</span>
+            </div>
+          </section>
+          <nav className="view-tabs" aria-label="Dashboard views">
+            {(
+              [
+                ["desk", "Day-ahead"],
+                ["accuracy", "Accuracy"],
+                ["method", "Methodology"],
+              ] as [View, string][]
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={(event) => {
+                  setKeyboardView(event.detail === 0);
+                  setView(key);
+                }}
+                className={view === key ? "active" : ""}
+                aria-current={view === key ? "page" : undefined}
+              >
+                {label}
+                {view === key && (
+                  <motion.span
+                    className="tab-indicator"
+                    layoutId="desk-tab"
+                    transition={{
+                      duration: keyboardView || reduceMotion ? 0 : 0.18,
+                      ease: [0.23, 1, 0.32, 1],
+                    }}
+                  />
+                )}
+              </button>
+            ))}
+          </nav>
+          {view !== "method" && (
+            <div className="control-bar">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (view === "desk") setDate(draftDate);
+                  setCutoff(draftTime);
+                }}
+              >
+                {view === "desk" && (
+                  <>
+                    <label>
+                      <span>Decision date</span>
+                      <span className="input-wrap">
+                        <CalendarDays size={15} />
+                        <input
+                          aria-label="Decision date"
+                          type="date"
+                          name="decision_date"
+                          min="2026-01-01"
+                          max="2026-01-31"
+                          value={draftDate}
+                          onChange={(e) => setDraftDate(e.target.value)}
+                          required
+                        />
+                      </span>
+                    </label>
+                    <div className="date-stepper">
+                      <button
+                        type="button"
+                        aria-label="Previous decision day"
+                        disabled={date === "2026-01-01"}
+                        onClick={() => moveDate(-1)}
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Next decision day"
+                        disabled={date === "2026-01-31"}
+                        onClick={() => moveDate(1)}
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                    <span className="control-divider" />
+                  </>
+                )}
+                <label>
+                  <span>
+                    Forecast cutoff <small>GMT</small>
+                  </span>
+                  <input
+                    aria-label="Forecast cutoff GMT"
+                    type="time"
+                    name="cutoff"
+                    value={draftTime}
+                    onChange={(e) => setDraftTime(e.target.value)}
+                    required
+                  />
+                </label>
+                <button
+                  className="apply-button"
+                  type="submit"
+                  disabled={
+                    (view !== "desk" || draftDate === date) &&
+                    draftTime === cutoff
+                  }
+                >
+                  Apply <ArrowRight size={14} />
+                </button>
+              </form>
+              <a
+                className="export-link"
+                aria-label={`Export ${scope} as CSV`}
+                href={`/api/export?scope=${scope}&decision_date=${date}&cutoff=${cutoff}`}
+                download
+              >
+                <Download size={16} />
+                <span>Export {scope === "month" ? "month" : "day"}</span>
+              </a>
+            </div>
+          )}
+          {view === "desk" && (
+            <DataView result={day}>
+              {(value) => (
+                <Desk
+                  data={value}
+                  actuals={actuals}
+                  setActuals={setActuals}
+                  range={range}
+                  setRange={setRange}
                 />
               )}
-            </button>
-          ))}
-        </nav>
-        <div className="control-bar">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              setDate(draftDate);
-              setCutoff(draftTime);
-            }}
-          >
-            <label>
-              <span>Decision date</span>
-              <span className="input-wrap">
-                <CalendarDays size={15} />
-                <input
-                  aria-label="Decision date"
-                  type="date"
-                  name="decision_date"
-                  min="2026-01-01"
-                  max="2026-01-31"
-                  value={draftDate}
-                  onChange={(e) => setDraftDate(e.target.value)}
-                  required
+            </DataView>
+          )}
+          {view === "accuracy" && (
+            <DataView result={month}>
+              {(value) => (
+                <Accuracy
+                  data={value}
+                  selectedDate={date}
+                  selectDay={selectDay}
                 />
-              </span>
-            </label>
-            <div className="date-stepper">
-              <button
-                type="button"
-                aria-label="Previous decision day"
-                disabled={date === "2026-01-01"}
-                onClick={() => moveDate(-1)}
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                type="button"
-                aria-label="Next decision day"
-                disabled={date === "2026-01-31"}
-                onClick={() => moveDate(1)}
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-            <span className="control-divider" />
-            <label>
-              <span>
-                Forecast cutoff <small>GMT</small>
-              </span>
-              <input
-                aria-label="Forecast cutoff GMT"
-                type="time"
-                name="cutoff"
-                value={draftTime}
-                onChange={(e) => setDraftTime(e.target.value)}
-                required
-              />
-            </label>
-            <button
-              className="apply-button"
-              type="submit"
-              disabled={draftDate === date && draftTime === cutoff}
-            >
-              Apply <ArrowRight size={14} />
-            </button>
-          </form>
-          <a
-            className="export-link"
-            aria-label={`Export ${scope} as CSV`}
-            href={`/api/export?scope=${scope}&decision_date=${date}&cutoff=${cutoff}`}
-            download
-          >
-            <Download size={16} />
-            <span>Export {scope === "month" ? "month" : "day"}</span>
-          </a>
-        </div>
-        {view === "desk" &&
-          (day.data ? (
-            <Desk
-              data={day.data}
-              actuals={actuals}
-              setActuals={setActuals}
-              range={range}
-              setRange={setRange}
-            />
-          ) : (
-            <Empty error={day.error} retry={day.retry} />
-          ))}
-        {view === "accuracy" &&
-          (month.data ? (
-            <Accuracy data={month.data} selectDay={selectDay} />
-          ) : (
-            <Empty error={month.error} retry={month.retry} />
-          ))}
-        {view === "method" && <Method data={day.data} />}
-        <footer>
-          <span>NORTHLINE</span>
-          <span>Source: Elexon Insights · January 2026 pilot</span>
-        </footer>
-      </main>
+              )}
+            </DataView>
+          )}
+          {view === "method" && (
+            <Method data={day.data}>
+              <MethodNotes />
+            </Method>
+          )}
+          <footer>
+            <span>NORTHLINE</span>
+            <span>Source: Elexon Insights · January 2026 pilot</span>
+          </footer>
+        </main>
+      </KeyboardInput.Provider>
     </>
   );
 }
@@ -374,6 +461,22 @@ function Desk({
   setRange: (value: boolean) => void;
 }) {
   const reduceMotion = useReducedMotion();
+  const scene = useRef<HTMLDivElement>(null);
+  useScene(scene, "desk");
+  useLayoutEffect(() => {
+    if (!actuals || reduceMotion) return;
+    const context = gsap.context(() => {
+      const curve = scene.current?.querySelector(".actual-generation");
+      if (curve)
+        gsap.from(curve, {
+          opacity: 0,
+          duration: 0.24,
+          ease: "power2.out",
+          clearProps: "opacity",
+        });
+    }, scene);
+    return () => context.revert();
+  }, [actuals, reduceMotion]);
   const m = data.metrics,
     history = data.history;
   const available = data.rows.filter((row) => row.forecastMw != null);
@@ -381,26 +484,36 @@ function Desk({
     ? available.reduce((a, b) => (a.forecastMw! < b.forecastMw! ? a : b))
     : null;
   const latest = data.publicationTimes.at(-1);
-  const singleRun = data.publicationTimes.length === 1;
   const chartRows = data.rows.map((row) => ({
     ...row,
     range: row.lowerMw == null ? null : [row.lowerMw, row.upperMw],
   }));
   return (
-    <div className="view-content">
-      <div className="context-line">
-        <span>
-          <span className="status-dot" />
-          As known on{" "}
+    <div className="view-content desk-view" ref={scene}>
+      <ol
+        className="decision-timeline"
+        aria-label="Forecast selection timeline"
+        data-enter
+      >
+        <li>
+          <span>Published</span>
           <strong>
-            {displayDate(data.decisionDate)} at {utcTime(data.cutoff)} GMT
+            {latest
+              ? `${displayDate(latest)} · ${utcTime(latest)}`
+              : "Unavailable"}
           </strong>
-        </span>
-        <span>
-          Delivery <ArrowRight size={13} />{" "}
-          <strong>{displayDate(data.deliveryDate, true)}</strong>
-        </span>
-      </div>
+        </li>
+        <li>
+          <span>Decision</span>
+          <strong>
+            {displayDate(data.decisionDate)} · {utcTime(data.cutoff)}
+          </strong>
+        </li>
+        <li>
+          <span>Delivery</span>
+          <strong>{displayDate(data.deliveryDate)} · 24h</strong>
+        </li>
+      </ol>
       {m.forecastHours < 24 && (
         <div className="notice warning">
           <Info size={17} />
@@ -410,24 +523,24 @@ function Desk({
       )}
       <section className="metrics" aria-label="Day-ahead key figures">
         <Metric
-          label="MEAN WIND FORECAST"
+          label="WIND FORECAST"
           value={gw(m.meanForecastMw)}
           unit="GW"
-          detail={`${m.forecastHours} forecast delivery hours`}
+          detail={`${m.forecastHours}/24 hours`}
           accent
         />
         <Metric
-          label="FORECAST WIND ENERGY"
+          label="DAY’S ENERGY"
           value={gw(m.forecastEnergyMwh)}
           unit="GWh"
           detail={
             m.forecastHours === 24
-              ? "Expected across the delivery day"
+              ? "Full delivery day"
               : "Partial day · missing hours excluded"
           }
         />
         <Metric
-          label="LOWEST FORECAST HOUR"
+          label="LOWEST HOUR"
           value={gw(minimum?.forecastMw)}
           unit="GW"
           detail={
@@ -437,13 +550,13 @@ function Desk({
           }
         />
         <Metric
-          label="PRIOR FORECAST ERROR"
+          label="PAST ERROR · MAE"
           value={gw(history.metrics.maeMw)}
           unit="GW"
-          detail={`MAE · ${history.metrics.pairedHours} earlier paired hours`}
+          detail={`${history.metrics.pairedHours} prior hours`}
         />
       </section>
-      <div className="desk-grid">
+      <div className="desk-grid" data-enter>
         <section className="chart-panel">
           <div className="section-top">
             <div>
@@ -456,29 +569,20 @@ function Desk({
             <span className="unit-label">GW</span>
           </div>
           <div className="chart-options">
-            <label>
-              <input
-                type="checkbox"
-                checked={range}
-                disabled={!history.rangeAvailable}
-                onChange={(e) => setRange(e.target.checked)}
-              />
-              <span className="legend-block" />
-              Past-error range
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={actuals}
-                onChange={(e) => setActuals(e.target.checked)}
-              />
-              <span className="legend-line actual" />
-              Reveal actuals <span className="tiny-badge">HINDSIGHT</span>
-            </label>
             <span className="forecast-legend">
-              <span className="legend-line" />
-              As-of forecast
+              <span className="legend-line" /> Forecast
             </span>
+            <Toggle
+              label="Past-error range"
+              checked={range}
+              disabled={!history.rangeAvailable}
+              onChange={setRange}
+            />
+            <Toggle
+              label="Actuals · hindsight"
+              checked={actuals}
+              onChange={setActuals}
+            />
           </div>
           <div
             className="profile-chart"
@@ -546,6 +650,7 @@ function Desk({
                 />
                 {actuals && (
                   <Line
+                    className="actual-generation"
                     name="Actual generation"
                     dataKey="actualMw"
                     type="linear"
@@ -560,68 +665,22 @@ function Desk({
             </ResponsiveContainer>
           </div>
           <div className="chart-footnote">
-            <Info size={14} />
             <span>
               {history.rangeAvailable
-                ? `Range uses the 10th–90th percentiles of ${history.metrics.pairedHours} earlier hourly errors. It is descriptive, not a calibrated prediction interval.`
-                : "Past-error range needs at least 48 earlier paired hours. It is unavailable at this cutoff."}
+                ? `P10–P90 · ${history.metrics.pairedHours} past hours · descriptive, not calibrated`
+                : "Range unavailable · fewer than 48 past hours"}
+            </span>
+            <span>
+              P90 shortfall{" "}
+              <strong>
+                {history.rangeAvailable
+                  ? gw(history.metrics.p90ShortfallMw)
+                  : "—"}{" "}
+                GW
+              </strong>
             </span>
           </div>
         </section>
-        <aside className="decision-panel">
-          <div className="eyebrow">
-            <span className="live-ring" />
-            DECISION CONTEXT
-          </div>
-          <h2>
-            Leave room
-            <br />
-            for the wind.
-          </h2>
-          <p>
-            Forecast wind can fall short. Put its past error alongside the
-            volume you expect.
-          </p>
-          <div className="risk-number">
-            <span>PRIOR P90 WIND SHORTFALL</span>
-            <strong>
-              {history.rangeAvailable
-                ? gw(history.metrics.p90ShortfallMw)
-                : "—"}
-              <small>GW</small>
-              <ArrowDownRight size={31} />
-            </strong>
-          </div>
-          <p className="risk-explanation">
-            {history.rangeAvailable
-              ? "90% of earlier hourly forecast-minus-actual errors were at or below this value, floored at zero."
-              : "Not enough earlier observations yet. No shortfall estimate is shown."}
-          </p>
-          <div className="decision-divider" />
-          <div className="run-detail">
-            <span>Forecast published</span>
-            <strong>
-              {latest
-                ? `${displayDate(latest)} · ${utcTime(latest)} GMT`
-                : "Unavailable"}
-            </strong>
-          </div>
-          <div className="run-detail">
-            <span>Selection</span>
-            <strong>
-              {singleRun
-                ? "One publication · all hours"
-                : `${data.publicationTimes.length} publications · latest per hour`}
-            </strong>
-          </div>
-          <div className="scope-note">
-            <Layers3 size={16} />
-            <span>
-              National wind only. Portfolio demand is needed to calculate a
-              purchase volume.
-            </span>
-          </div>
-        </aside>
       </div>
       {actuals && (
         <motion.section
@@ -631,7 +690,7 @@ function Desk({
           transition={{ duration: 0.14 }}
         >
           <span className="tiny-badge">HINDSIGHT</span>
-          <strong>Delivery-day check</strong>
+          <strong>Delivery check</strong>
           <span>
             MAE <b>{gw(m.maeMw)} GW</b>
           </span>
@@ -645,13 +704,12 @@ function Desk({
           <span>
             Paired hours <b>{m.pairedHours}/24</b>
           </span>
-          <span>Actuals were unavailable at this buying decision.</span>
         </motion.section>
       )}
       <details className="hourly-details">
         <summary>
           <span>
-            Explore the hourly data <small>24 delivery hours · GMT</small>
+            Hourly data <small>MW · GMT</small>
           </span>
           <span className="summary-plus">+</span>
         </summary>
@@ -765,192 +823,201 @@ function WindTooltip({
 
 function Accuracy({
   data,
+  selectedDate,
   selectDay,
 }: {
   data: Month;
+  selectedDate: string;
   selectDay: (date: string) => void;
 }) {
+  const scene = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotion();
+  const keyboard = useContext(KeyboardInput);
+  useScene(scene, data.cutoffTime);
+  const [index, setIndex] = useState(() =>
+    Math.max(
+      0,
+      data.days.findIndex((day) => day.decisionDate === selectedDate),
+    ),
+  );
   const m = data.metrics;
-  const complete = data.days.filter((day) => day.pairedHours === 24).length;
-  const best = data.days
-    .filter((day) => day.maeMw != null)
-    .reduce<(typeof data.days)[number] | null>(
-      (a, b) => (a == null || b.maeMw! < a.maeMw! ? b : a),
-      null,
-    );
-  const worst = data.days
-    .filter((day) => day.maeMw != null)
-    .reduce<(typeof data.days)[number] | null>(
-      (a, b) => (a == null || b.maeMw! > a.maeMw! ? b : a),
-      null,
-    );
+  const chosen = data.days[index];
+  const maximum = Math.max(1, ...data.days.map((day) => day.maeMw ?? 0));
+  const valid = data.days.filter((day) => day.maeMw != null);
+  const best = valid.reduce<(typeof valid)[number] | null>(
+    (a, b) => (!a || b.maeMw! < a.maeMw! ? b : a),
+    null,
+  );
+  const worst = valid.reduce<(typeof valid)[number] | null>(
+    (a, b) => (!a || b.maeMw! > a.maeMw! ? b : a),
+    null,
+  );
   return (
-    <div className="view-content">
+    <div className="view-content accuracy-view" ref={scene}>
       <div className="context-line">
-        <span>
-          <span className="hindsight-dot" />
-          RETROSPECTIVE EVALUATION
-        </span>
-        <span>
-          Decisions 1–31 Jan <ArrowRight size={13} /> Delivery 2 Jan–1 Feb ·{" "}
-          {data.cutoffTime} GMT cutoff
-        </span>
+        <span>Retrospective · {data.cutoffTime} GMT cutoff</span>
+        <span>2 Jan → 1 Feb delivery</span>
       </div>
-      <section className="metrics">
+      <section className="metrics" aria-label="Monthly error metrics">
         <Metric
-          label="MEAN ABSOLUTE ERROR"
+          label="MAE"
           value={gw(m.maeMw)}
           unit="GW"
-          detail="Typical size of an hourly error"
+          detail="Typical miss"
           accent
         />
         <Metric
-          label="ROOT MEAN SQUARED ERROR"
+          label="RMSE"
           value={gw(m.rmseMw)}
           unit="GW"
-          detail="Gives large errors greater weight"
+          detail="Large-error weighted"
         />
         <Metric
-          label="FORECAST BIAS"
-          value={`${m.biasMw != null && m.biasMw > 0 ? "+" : ""}${gw(m.biasMw)}`}
+          label="BIAS"
+          value={`${(m.biasMw ?? 0) > 0 ? "+" : ""}${gw(m.biasMw)}`}
           unit="GW"
-          detail={
-            m.biasMw == null
-              ? "No paired observations"
-              : m.biasMw >= 0
-                ? "Positive → wind over-forecast on average"
-                : "Negative → wind under-forecast on average"
-          }
+          detail="Forecast − actual"
         />
         <Metric
-          label="WEIGHTED ABSOLUTE ERROR"
+          label="WAPE"
           value={number(m.wapePct, 1)}
           unit="%"
-          detail="Absolute error ÷ actual wind energy"
+          detail="Relative error"
         />
       </section>
-      <section className="chart-panel accuracy-chart">
+      <section
+        className="month-overview"
+        data-enter
+        aria-labelledby="month-title"
+      >
         <div className="section-top">
-          <div>
-            <div className="eyebrow">A MONTH IN PERSPECTIVE</div>
-            <h2>How much did the forecast miss?</h2>
-            <p>
-              Daily MAE by decision date · same {data.cutoffTime} GMT cutoff
-              every day
-            </p>
+          <h2 id="month-title">A month of forecast error.</h2>
+          <span className="unit-label">Daily MAE · 0–{gw(maximum)} GW</span>
+        </div>
+        <div className="month-scrubber">
+          <div
+            className="error-columns"
+            role="img"
+            aria-label={`Daily mean absolute errors. Smallest: ${best ? displayDate(best.decisionDate) : "unavailable"}, ${gw(best?.maeMw)} GW. Largest: ${worst ? displayDate(worst.decisionDate) : "unavailable"}, ${gw(worst?.maeMw)} GW. Use the day slider below for exact values.`}
+          >
+            {data.days.map((day, i) => (
+              <div
+                className="error-column"
+                key={day.day}
+                data-selected={i === index}
+              >
+                <span
+                  className="error-bar"
+                  data-bar
+                  style={{
+                    height: `${Math.max(1, ((day.maeMw ?? 0) / maximum) * 100)}%`,
+                  }}
+                  data-missing={day.maeMw == null}
+                />
+                <span className="column-day">
+                  {[0, 7, 14, 21, 30].includes(i) ? day.day : ""}
+                </span>
+              </div>
+            ))}
+            <motion.span
+              className="day-guide"
+              aria-hidden="true"
+              animate={{ transform: `translateX(${index * 100}%)` }}
+              transition={{ duration: 0 }}
+              style={{ width: `${100 / data.days.length}%` }}
+            />
           </div>
-          <span className="unit-label">GW</span>
+          <input
+            className="day-scrubber"
+            type="range"
+            min="1"
+            max={data.days.length}
+            step="1"
+            value={index + 1}
+            aria-label="Inspect a January decision"
+            aria-valuetext={`${displayDate(chosen.decisionDate)}, MAE ${gw(chosen.maeMw)} gigawatts`}
+            onChange={(event) => setIndex(Number(event.target.value) - 1)}
+          />
         </div>
-        <div
-          className="month-chart"
-          role="img"
-          aria-label="Daily mean absolute forecast error. Exact values follow in the daily results table."
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart
-              data={data.days}
-              margin={{ top: 12, right: 6, bottom: 12, left: -10 }}
-            >
-              <CartesianGrid vertical={false} stroke="#e7ebe6" />
-              <XAxis
-                dataKey="day"
-                tick={{ fill: "#77817a", fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-                interval={1}
-                dy={10}
-              />
-              <YAxis
-                tickFormatter={(value) => number(value / 1000, 1)}
-                tick={{ fill: "#77817a", fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip
-                formatter={(value) => [`${gw(Number(value))} GW`, "Daily MAE"]}
-                labelFormatter={(label) => `Decision ${label} January`}
-                cursor={{ fill: "#f1f3ed" }}
-              />
-              <Bar
-                dataKey="maeMw"
-                fill="#618873"
-                radius={[3, 3, 0, 0]}
-                maxBarSize={23}
-                isAnimationActive={false}
-              />
-              <ReferenceLine
-                y={m.maeMw ?? 0}
-                stroke="#b77740"
-                strokeDasharray="4 4"
-                label={{
-                  value: "Month MAE",
-                  position: "insideTopRight",
-                  fill: "#956133",
-                  fontSize: 11,
-                }}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
+        <div className="day-preview">
+          <div>
+            <span className="eyebrow">DECISION → DELIVERY</span>
+            <strong>
+              {displayDate(chosen.decisionDate)}{" "}
+              <span>→ {displayDate(chosen.deliveryDate)}</span>
+            </strong>
+          </div>
+          <div>
+            <span className="eyebrow">MAE</span>
+            <strong>
+              <RollingValue value={gw(chosen.maeMw)} instant />{" "}
+              <small>GW</small>
+            </strong>
+          </div>
+          <div>
+            <span className="eyebrow">BIAS</span>
+            <strong>
+              <RollingValue
+                value={`${(chosen.biasMw ?? 0) > 0 ? "+" : ""}${gw(chosen.biasMw)}`}
+                instant
+              />{" "}
+              <small>GW</small>
+            </strong>
+          </div>
+          <motion.button
+            className="replay-day"
+            whileTap={reduced || keyboard ? undefined : { scale: 0.97 }}
+            transition={{ duration: 0.12 }}
+            onClick={() => selectDay(chosen.decisionDate)}
+            aria-label={`Replay ${displayDate(chosen.decisionDate)} decision`}
+          >
+            Replay day <ArrowUpRight size={17} />
+          </motion.button>
         </div>
-        <div className="accuracy-caption">
+        <div className="month-extremes">
           <span>
-            <Check size={15} />
-            {number(m.pairedHours)}/{number(m.expectedHours)} paired hours ·{" "}
-            {complete}/31 complete days
+            Smallest <b>{best ? displayDate(best.decisionDate) : "—"}</b> ·{" "}
+            {gw(best?.maeMw)} GW
           </span>
-          <span>Missing values are excluded, never filled with zero.</span>
+          <span>
+            Largest <b>{worst ? displayDate(worst.decisionDate) : "—"}</b> ·{" "}
+            {gw(worst?.maeMw)} GW
+          </span>
         </div>
       </section>
-      <div className="insight-grid">
-        <section>
-          <span className="insight-icon">
-            <ArrowDownRight size={21} />
+      <section
+        className="error-balance"
+        aria-label="Over-forecast hours"
+        data-enter
+      >
+        <div>
+          <span>
+            <b>{m.overForecastHours}</b> over-forecast hours
           </span>
-          <div>
-            <p>SMALLEST DAILY ERROR</p>
-            <h3>
-              {best ? displayDate(best.decisionDate) : "—"}{" "}
-              <span>{gw(best?.maeMw)} GW</span>
-            </h3>
-            <small>Decision date · mean absolute error</small>
-          </div>
-        </section>
-        <section>
-          <span className="insight-icon amber">
-            <ArrowUpRight size={21} />
+          <span>
+            <b>{m.pairedHours - m.overForecastHours}</b> at or below actual
           </span>
-          <div>
-            <p>LARGEST DAILY ERROR</p>
-            <h3>
-              {worst ? displayDate(worst.decisionDate) : "—"}{" "}
-              <span>{gw(worst?.maeMw)} GW</span>
-            </h3>
-            <small>Decision date · mean absolute error</small>
-          </div>
-        </section>
-        <section>
-          <span className="insight-icon">
-            <Wind size={21} />
-          </span>
-          <div>
-            <p>OVER-FORECAST HOURS</p>
-            <h3>
-              {number(m.overForecastHours)} <span>of {m.pairedHours}</span>
-            </h3>
-            <small>Expected wind exceeded actual wind</small>
-          </div>
-        </section>
-      </div>
-      <section className="daily-results">
-        <div className="section-top">
-          <div>
-            <div className="eyebrow">LOOK CLOSER</div>
-            <h2>Daily results</h2>
-          </div>
-          <p>
-            Select a day to replay the decision <ArrowRight size={15} />
-          </p>
         </div>
+        <div className="balance-track" aria-hidden="true">
+          <span
+            style={{
+              width: `${m.pairedHours ? (m.overForecastHours / m.pairedHours) * 100 : 0}%`,
+            }}
+          />
+        </div>
+        <small>
+          {m.pairedHours}/{m.expectedHours} paired hours ·{" "}
+          {data.days.filter((day) => day.pairedHours === 24).length}/31 complete
+          days
+        </small>
+      </section>
+      <details className="hourly-details daily-results">
+        <summary>
+          <span>
+            All daily results <small>MW · January decisions</small>
+          </span>
+          <span className="summary-plus">+</span>
+        </summary>
         <div className="table-scroll">
           <table>
             <caption className="sr-only">
@@ -1000,45 +1067,18 @@ function Accuracy({
             </tbody>
           </table>
         </div>
-      </section>
-      <div className="notice">
-        <Info size={17} />
-        <span>
-          This full-month review uses later actuals to evaluate earlier
-          forecasts. Its results are not inputs to an earlier day-ahead
-          decision.
-        </span>
-      </div>
+      </details>
+      <p className="boundary-note">
+        Hindsight review. These results never feed an earlier decision. Missing
+        pairs are excluded.
+      </p>
     </div>
   );
 }
 
-function Method({ data }: { data: Day | null }) {
+function MethodNotes() {
   return (
-    <div className="method-layout view-content">
-      <div className="method-intro">
-        <div className="eyebrow">BUILT TO BE INSPECTED</div>
-        <h2>
-          The right forecast.
-          <br />
-          At the right time.
-        </h2>
-        <p>
-          A forecast published after the buying decision can explain the past.
-          It cannot inform that decision.
-        </p>
-        <div className="method-badge">
-          <Check size={16} />
-          No future forecast leakage
-        </div>
-        <p className="snapshot-note">
-          Fixed historical snapshot
-          <br />
-          {data
-            ? `Retrieved ${displayDate(data.retrievedAt, true)} at ${utcTime(data.retrievedAt)} UTC`
-            : "Retrieval timestamp is available from /api/health."}
-        </p>
-      </div>
+    <div className="method-notes-content">
       <div className="method-steps">
         <article>
           <span>01</span>

@@ -1,8 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import panorama from "./assets/wind-panorama.webp";
 
+gsap.registerPlugin(ScrollTrigger);
+
 export default function Landing() {
+  const scene = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
   const [seenIntro] = useState(() => {
     try {
@@ -11,6 +16,62 @@ export default function Landing() {
       return true;
     }
   });
+
+  useLayoutEffect(() => {
+    const media = gsap.matchMedia();
+    media.add(
+      "(prefers-reduced-motion: no-preference)",
+      () => {
+        if (!seenIntro) {
+          const intro = gsap.timeline({ defaults: { ease: "power3.out" } });
+          intro
+            .from(".landing-title-line > span", {
+              yPercent: 65,
+              opacity: 0.25,
+              duration: 0.85,
+              stagger: 0.09,
+            })
+            .from(
+              ".landing-action",
+              {
+                y: 14,
+                opacity: 0.3,
+                duration: 0.55,
+                clearProps: "transform,opacity",
+              },
+              0.18,
+            )
+            .from(
+              ".landing-figure",
+              {
+                y: 18,
+                opacity: 0.5,
+                duration: 0.7,
+                clearProps: "transform,opacity",
+              },
+              0.12,
+            );
+        }
+        gsap.fromTo(
+          ".landing-image img",
+          { yPercent: -3, scale: 1.08 },
+          {
+            yPercent: 3,
+            scale: 1.08,
+            ease: "none",
+            scrollTrigger: {
+              trigger: ".landing-image",
+              start: "top bottom",
+              end: "bottom top",
+              scrub: 0.6,
+            },
+          },
+        );
+      },
+      scene.current!,
+    );
+    return () => media.revert();
+  }, [seenIntro]);
 
   useEffect(() => {
     document.title = "Northline — Tomorrow, in view.";
@@ -22,7 +83,7 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className="landing">
+    <div className="landing" ref={scene}>
       <a className="skip-link" href="#landing-content">
         Skip to content
       </a>
@@ -35,19 +96,14 @@ export default function Landing() {
         </a>
       </header>
       <main id="landing-content" className="landing-main">
-        <motion.section
-          className="landing-intro"
-          initial={
-            seenIntro || reduceMotion ? false : { transform: "translateY(8px)" }
-          }
-          animate={{ transform: "translateY(0px)" }}
-          transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-          aria-labelledby="landing-title"
-        >
+        <section className="landing-intro" aria-labelledby="landing-title">
           <h1 id="landing-title">
-            Tomorrow,
-            <br />
-            in view.
+            <span className="landing-title-line">
+              <span>Tomorrow,</span>
+            </span>
+            <span className="landing-title-line">
+              <span>in view.</span>
+            </span>
           </h1>
           <div className="landing-action">
             <p>
@@ -72,7 +128,7 @@ export default function Landing() {
               </motion.span>
             </motion.a>
           </div>
-        </motion.section>
+        </section>
         <figure className="landing-figure">
           <div className="landing-image">
             <img

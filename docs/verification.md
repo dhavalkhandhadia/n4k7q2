@@ -32,3 +32,7 @@ Docker Desktop is installed, but failed on startup before its engine became avai
 ## Outside this build
 
 No video, YouTube publication, application-form submission, live procurement integration, penetration/load audit, or calibrated forecast model. Browser smoke tests are functional checks, not a formal accessibility certification.
+
+## Internal-page interaction pass
+
+The follow-up focuses on component engineering: retained digit columns, native control behavior, request cancellation, input-aware motion, and minimal internal pages. See [interaction-design.md](interaction-design.md) for implementation references and observed checks. This later pass successfully verified reduced-motion behavior in the browser, superseding the interrupted A2 emulation attempt described above. The original 17 statistical/API tests still pass; no calculation or source-data changes were made.

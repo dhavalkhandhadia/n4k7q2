@@ -242,70 +242,13 @@ h2 {
 .unit-label {
   border: 0;
 }
-.decision-panel {
-  border-radius: 2px;
-  background: #eaece2;
-  color: var(--ink);
-}
-.decision-panel:after,
-.live-ring {
-  display: none;
-}
-.decision-panel .eyebrow,
-.decision-panel > p,
-.decision-panel .risk-explanation,
-.run-detail span,
-.scope-note,
-.risk-number > span {
-  color: #59664f;
-}
-.decision-panel h2 {
-  font-family: var(--serif);
-  font-size: 35px;
-  color: var(--ink);
-  line-height: 1.05;
-}
-.risk-number strong {
-  color: #40613e;
-  font-weight: 400;
-}
-.risk-number strong small {
-  color: #59664f;
-}
-.risk-number svg {
-  color: #61794e;
-}
-.decision-divider {
-  background: #cbd1c0;
-}
-.run-detail strong {
-  color: var(--ink);
-}
-.accuracy-chart {
-  padding-top: 28px;
-  border-top: 1px solid var(--line);
-}
-.insight-icon {
-  background: none;
-}
-.insight-icon.amber {
-  background: none;
-}
 .replay {
   min-width: 44px;
   min-height: 44px;
   border: 0;
 }
-.method-intro h2 {
-  font-family: var(--serif);
-  font-size: 40px;
-}
 .method-steps p {
   color: #60675f;
-}
-.method-badge {
-  background: transparent;
-  padding-left: 0;
 }
 .method-steps article > span {
   border: 0;
@@ -505,49 +448,6 @@ footer {
     min-height: 32px;
   }
   .chart-footnote {
-    font-size: 10px;
-  }
-  .decision-panel {
-    display: block;
-    padding: 24px;
-  }
-  .decision-panel h2 {
-    font-size: 36px;
-  }
-  .decision-panel h2 br {
-    display: none;
-  }
-  .decision-panel > p {
-    font-size: 13px;
-  }
-  .decision-panel .risk-explanation {
-    font-size: 11px;
-  }
-  .run-detail span {
-    font-size: 10px;
-  }
-  .run-detail strong {
-    font-size: 12px;
-  }
-  .scope-note {
-    font-size: 11px;
-  }
-  .risk-number > span {
-    font-size: 9px;
-  }
-  .risk-number svg {
-    display: block;
-  }
-  .risk-number strong {
-    font-size: 40px;
-  }
-  .accuracy-caption {
-    font-size: 10px;
-  }
-  .insight-grid p {
-    font-size: 9px;
-  }
-  .insight-grid small {
     font-size: 10px;
   }
   table {
