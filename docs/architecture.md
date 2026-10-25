@@ -36,6 +36,8 @@ Vite development proxies same-origin `/api` requests to Python. The Docker image
 
 ## UI choices
 
+The plain root route renders the approved A2 landing. `/desk` loads the analyst workspace separately; original root query links still resolve to the workspace. Docker and Vercel both serve the entry document for `/desk`, including direct refreshes. Inter, Newsreader, and the illustrative ImageGen panorama are local assets. Motion supplies subtle interaction feedback with system reduced-motion support; the brief and methodology remain readable without animation.
+
 The desk distinguishes information available at the decision from later actuals. Hindsight is opt-in and labelled. Supporting sources, exact tabular values, lead times, cutoffs and scope are visible. SVG charts have textual summaries and equivalent tables. Controls have explicit labels, keyboard focus indicators, and native form validation. Layout stacks on mobile; tables scroll within their own region. Reduced motion is respected. Failed requests show an actionable retry and do not preserve stale results under new date labels.
 
 ## Deliberate limits

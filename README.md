@@ -4,11 +4,13 @@ A January 2026 pilot for a UK utility's day-ahead desk. Replay the wind forecast
 
 ## Use the application
 
+Start at the minimal landing page and choose **Open desk**, or open `/desk` directly. Existing root URLs containing date/cutoff/view parameters continue to open the desk.
+
 1. Select a **decision date** (1–31 January 2026) and forecast cutoff, then Apply. Delivery is the following day.
 2. See the latest eligible forecast per delivery hour, its publication time, daily energy, and past forecast error.
 3. Reveal actuals to review that delivery day with hindsight. This is off by default.
-4. Open **Forecast accuracy** for the January decision cohort and replay any daily result.
-5. Export the selected day or full month as CSV. **Data & methodology** explains every assumption.
+4. Open **Accuracy** for the January decision cohort and replay any daily result.
+5. Export the selected day or full month as CSV. **Methodology** explains every assumption.
 
 The default is 14 January, 09:00 GMT, delivering 15 January. Date/cutoff/view are shareable in the URL.
 
@@ -84,15 +86,18 @@ Across all 744 paired hours, MAE is **2.039 GW**, RMSE **2.505 GW**, bias **+1.7
 - Actuals are the latest returned values in the retrieved snapshot. This is not a reconstruction of every historical actual revision. The prior-risk filter is conservative: actual publication timestamps must be at or before cutoff.
 - The historical snapshot is intentionally bundled for a reproducible, fast demo. It is not a live trading feed. To refresh it, run `python scripts/fetch_data.py`, rerun tests, and restart/redeploy. A failed download leaves the old snapshot intact. Successful refresh replaces the fixed snapshot and manifest, so commit them together.
 - No authentication, orders, user accounts, persistent user storage, or production trading integration. The API exposes public historical data only.
-- Web fonts come from Google Fonts; system sans-serif is the fallback. The JS chart bundle is approximately 200 KB gzip.
+- Inter and Newsreader are self-hosted with their OFL licenses in `public/licenses/`; no external font request is required. The desk is loaded separately from the landing page.
 
 ## Architecture and files
 
 ```text
+src/Landing.tsx              Approved A2 landing and Motion interactions
+src/landing.css              Shared paper, ink and editorial typography theme
+src/assets/                  Self-hosted fonts and optimized panorama
 src/App.tsx                  React views, controls, charts, accessible tables
 src/types.ts                 API response types
 src/style.css                Responsive Northline visual design
-src/main.tsx                 React entry point
+src/main.tsx                 Landing/desk entry selection and lazy desk loading
 backend/analysis.py          Indexed data, as-of selection, metrics, risk, cohort
 backend/app.py               FastAPI endpoints, validation, CSV, Docker static serving
 api/index.py                 Vercel ASGI entry point
@@ -125,7 +130,7 @@ Public repository: **https://github.com/dhavalkhandhadia/n4k7q2** (anonymous nam
 
 ## AI assistance
 
-**OpenAI Codex was used** to read the supplied brief, research the official API documentation, implement the frontend/backend, author tests and documentation, and help verify and deploy the application. All displayed generation values come from Elexon; no synthetic values or AI-generated forecasts are used. The person presenting the project should review and understand the implementation and assumptions.
+**OpenAI Codex was used** to read the supplied brief, research the official API documentation, implement the frontend/backend, author tests and documentation, and help verify and deploy the application. The landing panorama was generated with OpenAI ImageGen and is illustrative, rather than a photograph of a specific installation. The approved A2 design uses Motion for the restrained first-visit entrance, link feedback, active-view indicator, loading state, and hindsight reveal; reduced-motion preferences are respected. All displayed generation values come from Elexon; no synthetic values or AI-generated forecasts are used. The person presenting the project should review and understand the implementation and assumptions.
 
 ## Remaining submission work
 

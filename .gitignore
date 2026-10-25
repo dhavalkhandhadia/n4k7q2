@@ -5,6 +5,7 @@ __pycache__/
 *.pyc
 *.tsbuildinfo
 .vercel/
+.checkpoints/
 .env*
 !.env.example
 

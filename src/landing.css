@@ -1,0 +1,586 @@
+@font-face {
+  font-family: Inter;
+  src: url("./assets/inter.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: Newsreader;
+  src: url("./assets/newsreader.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+}
+
+:root {
+  font-family: Inter, sans-serif;
+  color: #1b2924;
+  background: #f5f3ee;
+  --ink: #1b2924;
+  --muted: #697069;
+  --line: #d9d9d0;
+  --paper: #fdfcf8;
+  --green: #436d54;
+  --serif: Newsreader, Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+}
+:focus-visible {
+  outline-color: var(--ink);
+}
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 24px;
+  z-index: 100;
+  padding: 12px 18px;
+  background: var(--ink);
+  color: var(--paper);
+  transform: translateY(-150%);
+}
+.skip-link:focus {
+  transform: none;
+}
+.wordmark {
+  font-size: 14px;
+  line-height: 24px;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  white-space: nowrap;
+}
+
+/* Approved A2: one headline, one action and an uninterrupted panorama. */
+.landing {
+  max-width: 1720px;
+  margin: 0 auto;
+  padding: 0 clamp(24px, 3.4vw, 64px) 32px;
+}
+.landing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 36px 16px 16px;
+}
+.method-link {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+}
+.landing-main {
+  max-width: none;
+  padding: 0;
+}
+.landing-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 255px;
+  gap: 48px;
+  align-items: end;
+  padding: 52px 16px 48px;
+}
+.landing-intro h1 {
+  margin: 0;
+  font: 400 clamp(96px, 11.4vw, 184px)/0.88 var(--serif);
+  letter-spacing: -0.052em;
+  color: var(--ink);
+  text-wrap: nowrap;
+}
+.landing-action {
+  padding-bottom: 6px;
+}
+.landing-action p {
+  font-size: 19px;
+  line-height: 1.4;
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.desk-link {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 44px;
+  font-size: 19px;
+  text-decoration: underline;
+  text-underline-offset: 7px;
+  text-decoration-thickness: 1px;
+}
+.desk-link span {
+  display: inline-block;
+}
+.landing-figure {
+  margin: 0;
+}
+.landing-image {
+  width: 100%;
+  aspect-ratio: 3.05;
+  overflow: hidden;
+}
+.landing-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 54%;
+}
+.landing-figure figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 17px;
+  font-size: 13px;
+  color: #454c46;
+}
+
+/* Keep the analysis mechanics and make its surfaces share the landing theme. */
+.site-header {
+  background: transparent;
+  border: 0;
+  max-width: 1512px;
+  margin: 0 auto;
+  height: 90px;
+}
+.home-link {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  min-height: 44px;
+  font-size: 12px;
+}
+.intro {
+  padding: 28px 0 36px;
+}
+.intro h1 {
+  font: 400 58px/1.08 var(--serif);
+  letter-spacing: -0.035em;
+  margin-top: 14px;
+}
+.intro .eyebrow,
+.period-stamp span:first-child,
+.period-stamp span:last-child,
+.dataset-status {
+  color: var(--muted);
+}
+.small-line {
+  display: none;
+}
+.view-tabs button {
+  min-height: 48px;
+  font-weight: 500;
+}
+.view-tabs button.active {
+  font-weight: 500;
+  color: var(--ink);
+}
+.tab-indicator {
+  position: absolute;
+  display: block;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--ink);
+}
+.control-bar input {
+  font-size: 16px;
+}
+.control-bar input[type="date"] {
+  width: 154px;
+}
+.control-bar input[type="time"] {
+  width: 112px;
+}
+.date-stepper button {
+  min-width: 32px;
+  min-height: 36px;
+}
+.metric-value {
+  font-weight: 400;
+}
+.metric > p,
+.metric small,
+.section-top p,
+.chart-options,
+.chart-footnote {
+  color: var(--muted);
+}
+.desk-grid {
+  gap: 32px;
+  border-top: 1px solid var(--line);
+  padding-top: 28px;
+}
+.chart-panel {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+h2 {
+  font: 400 28px/1.15 var(--serif);
+  letter-spacing: -0.025em;
+}
+.section-top .eyebrow {
+  font-size: 9px;
+}
+.chart-options label {
+  min-height: 44px;
+}
+.chart-options input {
+  width: 16px;
+  height: 16px;
+}
+.unit-label {
+  border: 0;
+}
+.decision-panel {
+  border-radius: 2px;
+  background: #eaece2;
+  color: var(--ink);
+}
+.decision-panel:after,
+.live-ring {
+  display: none;
+}
+.decision-panel .eyebrow,
+.decision-panel > p,
+.decision-panel .risk-explanation,
+.run-detail span,
+.scope-note,
+.risk-number > span {
+  color: #59664f;
+}
+.decision-panel h2 {
+  font-family: var(--serif);
+  font-size: 35px;
+  color: var(--ink);
+  line-height: 1.05;
+}
+.risk-number strong {
+  color: #40613e;
+  font-weight: 400;
+}
+.risk-number strong small {
+  color: #59664f;
+}
+.risk-number svg {
+  color: #61794e;
+}
+.decision-divider {
+  background: #cbd1c0;
+}
+.run-detail strong {
+  color: var(--ink);
+}
+.accuracy-chart {
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+}
+.insight-icon {
+  background: none;
+}
+.insight-icon.amber {
+  background: none;
+}
+.replay {
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+}
+.method-intro h2 {
+  font-family: var(--serif);
+  font-size: 40px;
+}
+.method-steps p {
+  color: #60675f;
+}
+.method-badge {
+  background: transparent;
+  padding-left: 0;
+}
+.method-steps article > span {
+  border: 0;
+}
+.source-links a {
+  min-height: 44px;
+}
+.chart-tooltip {
+  background: var(--paper);
+}
+.view-content {
+  min-width: 0;
+}
+.load-state {
+  min-height: 650px;
+}
+footer {
+  color: var(--muted);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .method-link:hover,
+  .desk-link:hover,
+  .home-link:hover {
+    color: #4c6c47;
+  }
+}
+@media (pointer: coarse) {
+  .date-stepper button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .apply-button,
+  .export-link {
+    min-height: 44px;
+  }
+}
+@media (max-width: 1100px) {
+  .landing-intro {
+    grid-template-columns: minmax(0, 1fr) 210px;
+    gap: 32px;
+  }
+  .landing-action p,
+  .desk-link {
+    font-size: 17px;
+  }
+  .desk-grid {
+    gap: 24px;
+  }
+}
+@media (max-width: 760px) {
+  .landing {
+    padding: 0 24px 24px;
+  }
+  .landing-header {
+    padding: 24px 0 12px;
+  }
+  .wordmark {
+    font-size: 12px;
+    letter-spacing: 0.25em;
+  }
+  .method-link {
+    font-size: 13px;
+  }
+  .landing-intro {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+    padding: 48px 0 32px;
+  }
+  .landing-intro h1 {
+    font-size: clamp(56px, 19vw, 130px);
+    line-height: 0.9;
+  }
+  .landing-action {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 16px;
+    padding: 0;
+  }
+  .landing-action p {
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+  }
+  .desk-link {
+    font-size: 15px;
+    min-height: 44px;
+    flex-shrink: 0;
+  }
+  .landing-image {
+    aspect-ratio: 1.2;
+  }
+  .landing-image img {
+    object-position: 73% 50%;
+  }
+  .landing-figure figcaption {
+    font-size: 10px;
+    padding-top: 14px;
+    gap: 8px;
+  }
+  .site-header {
+    height: 76px;
+  }
+  .intro {
+    padding: 24px 0 28px;
+  }
+  .intro h1 {
+    font-size: clamp(35px, 8.7vw, 49px);
+  }
+  .view-tabs {
+    gap: 16px;
+    justify-content: space-between;
+  }
+  .view-tabs button {
+    font-size: 12px;
+  }
+  .control-bar {
+    gap: 12px;
+    padding: 22px 0;
+  }
+  .control-bar form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 88px;
+    gap: 18px 12px;
+    flex: 1;
+    min-width: 0;
+  }
+  .control-bar label {
+    min-width: 0;
+  }
+  .control-bar label > span:first-child {
+    font-size: 10px;
+  }
+  .input-wrap {
+    min-width: 0;
+  }
+  .control-bar input[type="date"] {
+    width: 100%;
+  }
+  .control-bar input[type="time"] {
+    width: 109px;
+  }
+  .date-stepper {
+    gap: 0;
+  }
+  .date-stepper button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .apply-button {
+    min-height: 44px;
+    padding: 10px;
+  }
+  .export-link {
+    min-width: 32px;
+    min-height: 44px;
+    justify-content: center;
+  }
+  .context-line {
+    flex-direction: column;
+    align-items: start;
+    font-size: 10px;
+  }
+  .context-line > span {
+    flex-wrap: wrap;
+  }
+  .metric > p {
+    font-size: 9px;
+    line-height: 1.5;
+  }
+  .metric small {
+    font-size: 10px;
+    line-height: 1.6;
+  }
+  .desk-grid {
+    gap: 24px;
+    padding-top: 26px;
+  }
+  .chart-panel {
+    padding: 0;
+  }
+  h2 {
+    font-size: 26px;
+  }
+  .chart-options {
+    gap: 0 12px;
+    margin-top: 12px;
+    font-size: 10px;
+  }
+  .chart-options label {
+    min-height: 44px;
+    gap: 5px;
+  }
+  .forecast-legend {
+    flex-basis: 100%;
+    min-height: 32px;
+  }
+  .chart-footnote {
+    font-size: 10px;
+  }
+  .decision-panel {
+    display: block;
+    padding: 24px;
+  }
+  .decision-panel h2 {
+    font-size: 36px;
+  }
+  .decision-panel h2 br {
+    display: none;
+  }
+  .decision-panel > p {
+    font-size: 13px;
+  }
+  .decision-panel .risk-explanation {
+    font-size: 11px;
+  }
+  .run-detail span {
+    font-size: 10px;
+  }
+  .run-detail strong {
+    font-size: 12px;
+  }
+  .scope-note {
+    font-size: 11px;
+  }
+  .risk-number > span {
+    font-size: 9px;
+  }
+  .risk-number svg {
+    display: block;
+  }
+  .risk-number strong {
+    font-size: 40px;
+  }
+  .accuracy-caption {
+    font-size: 10px;
+  }
+  .insight-grid p {
+    font-size: 9px;
+  }
+  .insight-grid small {
+    font-size: 10px;
+  }
+  table {
+    font-size: 11px;
+  }
+  thead th {
+    font-size: 10px;
+  }
+  .notice {
+    font-size: 11px;
+  }
+  .method-steps p {
+    font-size: 13px;
+  }
+  .method-steps article > span {
+    font-size: 10px;
+  }
+  .source-links a {
+    font-size: 11px;
+  }
+  footer {
+    font-size: 9px;
+  }
+}
+@media (max-width: 360px) {
+  .landing {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .landing-action p {
+    font-size: 12px;
+  }
+  .desk-link {
+    font-size: 14px;
+  }
+}

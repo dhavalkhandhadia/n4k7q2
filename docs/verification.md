@@ -16,12 +16,14 @@ Run date: 25 October 2026.
 - Live canonical URL: https://n4k7q2.vercel.app. Browser verified the populated desk and the real Python API response path, rather than only a static frontend shell. The browser console contained no warning/error entries in the inspected log.
 - Public anonymous-name repository: https://github.com/dhavalkhandhadia/n4k7q2.
 - [GitHub Actions run 40172363258](https://github.com/dhavalkhandhadia/n4k7q2/actions/runs/40172363258) passed on Ubuntu: all 17 tests on Python 3.12, the production React build on Node 22, Docker image build, and running-container checks of frontend, health, and 744 paired monthly hours.
-- An emulated narrow-screen view was visually inspected. Browser viewport measurement was inconsistent between tool calls, so a reliable no-overflow assertion and real-device verification remain pending for the approved redesign.
+- The approved A2 landing was inspected at 320, 375 and 768 CSS-pixel widths; document width did not exceed the viewport after correcting the mobile headline size. The desk was visually inspected at 375 pixels with no page overflow. Real-device verification remains outside these browser checks.
 - The shared source document was view-only. No source document edits, YouTube upload, or form submission were performed.
 
 ## Design checkpoint
 
-The user requested researched landing-page mockups before any redesign implementation. The functional application is the baseline; the proposed new design is supplied separately under the workspace's design-review outputs. Motion-based interaction implementation is deferred until the user approves a direction. Existing functional results above do not validate that unimplemented design.
+The user approved A2 after the second research and mockup round. The implementation preserves its two-line serif headline, minimal copy, single desk action, and uninterrupted generated panorama. The desk shares its paper, ink and typography theme.
+
+The redesign browser smoke confirmed landing-to-desk navigation, the methodology direct link, date stepping, native date/time keyboard entry and Apply, opt-in actuals, the expanded hourly table with half-MW precision, monthly metrics, and replay of 31 January into 1 February. The inspected warning/error console was empty. The automation fill helper did not emit React-compatible change events for native date/time controls; keyboard entry was used to verify those controls. Browser emulation of reduced motion could not be completed because the browser debugger disconnected; reduced-motion handling is present in MotionConfig and component guards, but is not claimed as browser-tested.
 
 ## Host limitation
 

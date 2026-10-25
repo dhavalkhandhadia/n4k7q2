@@ -2,6 +2,7 @@ node_modules
 dist
 .git
 .vercel
+.checkpoints
 .venv
 __pycache__
 **/__pycache__

@@ -68,6 +68,7 @@ if DIST.exists():
     app.mount("/assets", StaticFiles(directory=DIST / "assets"), name="assets")
 
     @app.get("/")
+    @app.get("/desk")
     def index():
         return FileResponse(DIST / "index.html")
 

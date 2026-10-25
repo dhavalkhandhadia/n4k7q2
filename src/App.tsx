@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import {
   ArrowDownRight,
   ArrowRight,
@@ -114,6 +115,7 @@ function Metric({
 }
 
 function Empty({ error, retry }: { error: string | null; retry: () => void }) {
+  const reduceMotion = useReducedMotion();
   return (
     <div className="load-state" role={error ? "alert" : "status"}>
       {error ? (
@@ -128,7 +130,12 @@ function Empty({ error, retry }: { error: string | null; retry: () => void }) {
         </>
       ) : (
         <>
-          <Wind size={28} className="loading-icon" />
+          <motion.span
+            animate={reduceMotion ? undefined : { opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 1.2, repeat: Infinity }}
+          >
+            <Wind size={28} />
+          </motion.span>
           <p>Aligning forecasts and actuals…</p>
         </>
       )}
@@ -159,11 +166,13 @@ export default function App() {
   );
   const [actuals, setActuals] = useState(false);
   const [range, setRange] = useState(true);
+  const [keyboardView, setKeyboardView] = useState(false);
   const day = useData<Day>(`/api/day?decision_date=${date}&cutoff=${cutoff}`);
   const month = useData<Month>(`/api/month?cutoff=${cutoff}`);
   useEffect(() => {
     const params = new URLSearchParams({ date, cutoff, view });
     window.history.replaceState(null, "", `?${params}`);
+    document.title = `Northline — ${view === "method" ? "Methodology" : view === "accuracy" ? "Forecast accuracy" : "Day-ahead desk"}`;
   }, [date, cutoff, view]);
   const moveDate = (offset: number) => {
     const next = new Date(`${date}T12:00:00Z`);
@@ -180,34 +189,37 @@ export default function App() {
   const scope = view === "accuracy" ? "month" : "day";
   return (
     <>
+      <a className="skip-link" href="#desk-content">
+        Skip to content
+      </a>
       <header className="site-header">
-        <a className="brand" href="/" aria-label="Northline home">
-          <span className="brand-symbol">
-            N<span />
-          </span>
-          <span>
-            NORTHLINE<span className="brand-sub">ENERGY INTELLIGENCE</span>
-          </span>
+        <a className="wordmark" href="/" aria-label="Northline home">
+          NORTHLINE
         </a>
         <div className="header-right">
           <span className="dataset-status">
             <span className="status-dot" />
             Elexon · archived data
           </span>
-          <span className="pilot-badge">HISTORICAL PILOT</span>
+          <a className="home-link" href="/">
+            Home <ArrowUpRight size={14} />
+          </a>
         </div>
       </header>
-      <main>
+      <main id="desk-content" className="desk-main">
         <section className="intro">
           <div>
             <div className="eyebrow">
               <span className="small-line" />
-              GREAT BRITAIN / NATIONAL WIND
+              GB WIND / JANUARY 2026
             </div>
             <h1>
-              Wind intelligence<span className="title-dot">.</span>
+              {view === "accuracy"
+                ? "Forecast accuracy"
+                : view === "method"
+                  ? "Data & methodology"
+                  : "Day-ahead desk"}
             </h1>
-            <p>A clearer view of tomorrow. A measured view of the risk.</p>
           </div>
           <div className="period-stamp">
             <span>DECISION WINDOW</span>
@@ -218,19 +230,31 @@ export default function App() {
         <nav className="view-tabs" aria-label="Dashboard views">
           {(
             [
-              ["desk", "Day-ahead desk"],
-              ["accuracy", "Forecast accuracy"],
-              ["method", "Data & methodology"],
+              ["desk", "Day-ahead"],
+              ["accuracy", "Accuracy"],
+              ["method", "Methodology"],
             ] as [View, string][]
-          ).map(([key, label], i) => (
+          ).map(([key, label]) => (
             <button
               key={key}
-              onClick={() => setView(key)}
+              onClick={(event) => {
+                setKeyboardView(event.detail === 0);
+                setView(key);
+              }}
               className={view === key ? "active" : ""}
               aria-current={view === key ? "page" : undefined}
             >
-              <span>0{i + 1}</span>
               {label}
+              {view === key && (
+                <motion.span
+                  className="tab-indicator"
+                  layoutId="desk-tab"
+                  transition={{
+                    duration: keyboardView ? 0 : 0.18,
+                    ease: [0.23, 1, 0.32, 1],
+                  }}
+                />
+              )}
             </button>
           ))}
         </nav>
@@ -249,6 +273,7 @@ export default function App() {
                 <input
                   aria-label="Decision date"
                   type="date"
+                  name="decision_date"
                   min="2026-01-01"
                   max="2026-01-31"
                   value={draftDate}
@@ -283,6 +308,7 @@ export default function App() {
               <input
                 aria-label="Forecast cutoff GMT"
                 type="time"
+                name="cutoff"
                 value={draftTime}
                 onChange={(e) => setDraftTime(e.target.value)}
                 required
@@ -298,6 +324,7 @@ export default function App() {
           </form>
           <a
             className="export-link"
+            aria-label={`Export ${scope} as CSV`}
             href={`/api/export?scope=${scope}&decision_date=${date}&cutoff=${cutoff}`}
             download
           >
@@ -325,11 +352,7 @@ export default function App() {
           ))}
         {view === "method" && <Method data={day.data} />}
         <footer>
-          <span>
-            <span className="footer-mark">N</span> NORTHLINE{" "}
-            <span className="footer-separator">/</span> A wind forecast decision
-            workspace
-          </span>
+          <span>NORTHLINE</span>
           <span>Source: Elexon Insights · January 2026 pilot</span>
         </footer>
       </main>
@@ -350,6 +373,7 @@ function Desk({
   range: boolean;
   setRange: (value: boolean) => void;
 }) {
+  const reduceMotion = useReducedMotion();
   const m = data.metrics,
     history = data.history;
   const available = data.rows.filter((row) => row.forecastMw != null);
@@ -482,7 +506,14 @@ function Desk({
                   tickLine={false}
                   domain={[0, "auto"]}
                 />
-                <Tooltip content={<WindTooltip actuals={actuals} />} />
+                <Tooltip
+                  content={
+                    <WindTooltip
+                      actuals={actuals}
+                      showRange={range && history.rangeAvailable}
+                    />
+                  }
+                />
                 {range && history.rangeAvailable && (
                   <Area
                     name="Past-error range"
@@ -593,7 +624,12 @@ function Desk({
         </aside>
       </div>
       {actuals && (
-        <section className="hindsight-strip">
+        <motion.section
+          className="hindsight-strip"
+          initial={reduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.14 }}
+        >
           <span className="tiny-badge">HINDSIGHT</span>
           <strong>Delivery-day check</strong>
           <span>
@@ -610,7 +646,7 @@ function Desk({
             Paired hours <b>{m.pairedHours}/24</b>
           </span>
           <span>Actuals were unavailable at this buying decision.</span>
-        </section>
+        </motion.section>
       )}
       <details className="hourly-details">
         <summary>
@@ -651,14 +687,14 @@ function Desk({
                   <td>{number(row.leadHours, 1)}</td>
                   {actuals && (
                     <>
-                      <td>{number(row.actualMw)}</td>
+                      <td>{number(row.actualMw, 1)}</td>
                       <td
                         className={
                           (row.errorMw ?? 0) > 0 ? "error-positive" : ""
                         }
                       >
                         {row.errorMw != null && row.errorMw > 0 ? "+" : ""}
-                        {number(row.errorMw)}
+                        {number(row.errorMw, 1)}
                       </td>
                     </>
                   )}
@@ -677,6 +713,7 @@ function WindTooltip({
   payload,
   label,
   actuals,
+  showRange,
 }: {
   active?: boolean;
   payload?: readonly {
@@ -690,6 +727,7 @@ function WindTooltip({
   }[];
   label?: string | number;
   actuals: boolean;
+  showRange: boolean;
 }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
@@ -706,7 +744,7 @@ function WindTooltip({
           <b>{gw(row.actualMw)} GW</b>
         </p>
       )}
-      {row.lowerMw != null && (
+      {showRange && row.lowerMw != null && (
         <p>
           <span>Past-error range</span>
           <b>
