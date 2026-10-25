@@ -12,9 +12,13 @@ const time = (value: string) =>
 
 export default function Method({
   data,
+  error,
+  retry,
   children,
 }: {
   data: Day | null;
+  error: string | null;
+  retry: () => void;
   children: ReactNode;
 }) {
   const scene = useRef<HTMLDivElement>(null);
@@ -28,6 +32,14 @@ export default function Method({
   const actual = ((row?.actualMw ?? 0) / maximum) * 280;
   return (
     <div className="method-view view-content" ref={scene}>
+      {error && (
+        <p role="alert">
+          Example unavailable.{" "}
+          <button className="replay-day" onClick={retry}>
+            Retry
+          </button>
+        </p>
+      )}
       <section className="publication-study" data-enter>
         <div className="method-statement">
           <span className="eyebrow">01 / SELECT</span>
@@ -50,7 +62,7 @@ export default function Method({
           <circle cx="140" cy="130" r="7" className="diagram-dot" />
           <circle cx="540" cy="130" r="6" className="later-dot" />
           <text x="140" y="75" textAnchor="middle" className="diagram-value">
-            {published ? time(published) : "Eligible"}
+            {published ? time(published) : "—"}
           </text>
           <text x="140" y="99" textAnchor="middle">
             Published
@@ -65,7 +77,13 @@ export default function Method({
             Later
           </text>
           <text x="140" y="175" textAnchor="middle" className="selected-label">
-            {published ? "✓ Selected" : "No publication"}
+            {published
+              ? "✓ Selected"
+              : data
+                ? "No publication"
+                : error
+                  ? "Unavailable"
+                  : "Loading…"}
           </text>
           <text x="540" y="175" textAnchor="middle" className="later-label">
             × Excluded
@@ -156,7 +174,11 @@ export default function Method({
             </svg>
           ) : (
             <div className="diagram-unavailable">
-              No paired observation at this cutoff.
+              {data
+                ? "No paired observation at this cutoff."
+                : error
+                  ? "Example unavailable."
+                  : "Loading example…"}
             </div>
           )}
           <p>

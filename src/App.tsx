@@ -433,7 +433,7 @@ export default function App() {
             </DataView>
           )}
           {view === "method" && (
-            <Method data={day.data}>
+            <Method data={day.data} error={day.error} retry={day.retry}>
               <MethodNotes />
             </Method>
           )}

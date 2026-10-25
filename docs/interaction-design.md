@@ -23,3 +23,5 @@ The visual baseline remains the approved A2 Northline theme. Piruicy informed co
 - Empty-range toggles expose an unchecked, disabled state to both the visual control and assistive technology.
 
 These are functional and component checks, not a frame-by-frame claim that every custom control is a replica of a reference. Real-phone gesture and formal frame-time audits are outside this pass.
+
+- A UI regression check covers loading, error with Retry, empty data, and populated methodology examples. Loading never claims that observations are missing. This check runs in CI.

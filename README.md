@@ -51,10 +51,11 @@ Open http://127.0.0.1:5173. Vite proxies `/api` to Python on port 8000. Stop bot
 
 ```sh
 python -m unittest discover -s tests -v
+npm run test:ui
 npm run build
 ```
 
-17 tests cover cutoff selection, future-publication exclusion, hourly alignment, missing observations, duplicate conflicts, non-finite values, hand-calculated metrics, zero denominators, early-month risk suppression, publication invariants at five cutoffs, source checksum, raw-record cross-check, API validation, failure handling, and CSV parity. GitHub Actions also builds and starts the Docker image and checks frontend/API responses.
+17 Python tests cover cutoff selection, future-publication exclusion, hourly alignment, missing observations, duplicate conflicts, non-finite values, hand-calculated metrics, zero denominators, early-month risk suppression, publication invariants at five cutoffs, source checksum, raw-record cross-check, API validation, failure handling, and CSV parity. Four methodology UI states (loading, failed, empty and populated) are regression-checked separately. GitHub Actions also builds and starts the Docker image and checks frontend/API responses.
 
 ## Data and methodology
 
